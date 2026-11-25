@@ -10,4 +10,5 @@ Encoding: UTF-8
 Imports:
     data.table,
     httr2,
-    jsonlite
+    jsonlite,
+    R.utils

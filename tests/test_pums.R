@@ -11,6 +11,7 @@ fake <- function(n, p_fb, p_lf_native, p_lf_fb, college_codes = c(15, 16), inst 
   d <- data.frame(SERIALNO = seq_len(n), SPORDER = 1, PUMA = "00800", AGEP = age, SEX = sample(1:2, n, TRUE),
     ESR = esr, NATIVITY = ifelse(fb, 2, 1), POBP = ifelse(fb, sample(c(448, 416, 303), n, TRUE), 27),
     SCH = sch, SCHG = ifelse(sch == 2, college_codes[1], 0), RELSHIPP = ifelse(runif(n) < inst, 37, 20),
+    SCHL = ifelse(age >= 25, sample(c(14, 16, 19, 21), n, TRUE), sample(c(16, 19), n, TRUE)),
     PWGTP = w)
   # replicate weights: SDR-style perturbations of the base weight
   for (r in 1:80) d[[paste0("PWGTP", r)]] <- round(w * sample(c(0.29, 1, 1.71), n, TRUE, prob = c(.25, .5, .25)))
@@ -28,7 +29,7 @@ ok(abs(tot$lfpr_se - 100 * sqrt(tot$lfpr / 100 * (1 - tot$lfpr / 100) / tot$n)) 
 for (m in c("lf", "emp")) {
   dd <- pums_decompose(p0, p1, m)
   e <- stats::setNames(dd$est, dd$term)
-  ok(abs(e[["age_sex"]] + e[["nativity"]] + e[["enrollment"]] + e[["within"]] - e[["change"]]) < 1e-9,
+  ok(abs(e[["age_sex"]] + e[["nativity"]] + e[["enrollment"]] + e[["education"]] + e[["within"]] - e[["change"]]) < 1e-9,
      paste(m, ": nested terms add to the actual change"))
 }
 dd <- pums_decompose(p0, p1, "lf"); e <- stats::setNames(dd$est, dd$term)
@@ -36,4 +37,7 @@ ok(e[["nativity"]] < 0, "a rising share of a lower-participation group shows up 
 # old SCHG coding (2010 file) picked up as college
 d2 <- fake(3000, 0.03, 0.7, 0.7, college_codes = c(6, 7)); p2 <- pums_prepare(d2)
 ok(any(p2$college), "college detected under the pre-2012 SCHG coding")
+ok(all(p0$edu[p0$age %in% c("16-19", "20-24")] == "u25") && all(p0$edu[!p0$age %in% c("16-19", "20-24")] %in% c("lths", "hs", "somecol", "ba")), "education coded for 25+ only")
+d3 <- fake(500, 0.03, 0.7, 0.7); d3$SCHL <- as.character(sample(c(8, 9, 11, 13, 16), 500, TRUE)); p3 <- pums_prepare(d3)
+ok(all(table(p3$edu[p3$edu != "u25"]) > 0) && setequal(unique(p3$edu[p3$edu != "u25"]), c("lths", "hs", "somecol", "ba")), "old 1-16 SCHL coding maps to all four levels")
 cat("PUMS tests passed\n")

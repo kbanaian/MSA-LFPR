@@ -26,6 +26,7 @@ jobs:
             any::httr2
             any::jsonlite
             any::data.table
+            any::R.utils
 
       - name: Fetch new data and rebuild site.json
         env:

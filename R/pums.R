@@ -43,6 +43,15 @@ pums_prepare <- function(d) {
   if (PUMS_EXCLUDE_INSTITUTIONAL) keep <- keep & !(gq_inst %in% TRUE)
   d <- d[keep, ]; age <- age[keep]; esr <- esr[keep]
   schg <- num(d$SCHG); college_codes <- if (max(schg, na.rm = TRUE) <= 7) c(6, 7) else c(15, 16)
+  # educational attainment, ages 25+: the 2006-10 file uses the old 1-16 SCHL
+  # coding (9 = HS grad, 10-12 = some college/associate, 13+ = BA+); later files
+  # use 1-24 (16-17 = HS/GED, 18-20 = some college/associate, 21+ = BA+)
+  schl <- num(d$SCHL)
+  edu <- if (max(schl, na.rm = TRUE) <= 16) {
+    cut(schl, c(-Inf, 8, 9, 12, Inf), labels = c("lths", "hs", "somecol", "ba"))
+  } else {
+    cut(schl, c(-Inf, 15, 17, 20, Inf), labels = c("lths", "hs", "somecol", "ba"))
+  }
   agegrp <- cut(age, c(15, 19, 24, 34, 44, 54, 64, 74, Inf), labels = AGES)
   fb <- num(d$NATIVITY) == 2
   ea <- fb & num(d$POBP) %in% PUMS_EAST_AFRICA
@@ -52,6 +61,7 @@ pums_prepare <- function(d) {
     age = as.character(agegrp), sex = ifelse(num(d$SEX) == 1, "Male", "Female"),
     nat = ifelse(!fb, "native", ifelse(ea, "eafrica", "otherfb")),
     enr = ifelse(age <= 24 & enrolled, "enrolled", "not"),
+    edu = ifelse(age >= 25, as.character(edu), "u25"),
     college = age <= 24 & schg %in% college_codes,
     lf = esr %in% c(1, 2, 3), emp = esr %in% c(1, 2),
     stringsAsFactors = FALSE
@@ -83,7 +93,11 @@ PUMS_GROUPS <- list(
   y_not = function(p) p$age %in% c("16-19", "20-24") & p$enr == "not",
   prime = function(p) p$age %in% c("25-34", "35-44", "45-54"),
   prime_native = function(p) p$age %in% c("25-34", "35-44", "45-54") & p$nat == "native",
-  prime_eafrica = function(p) p$age %in% c("25-34", "35-44", "45-54") & p$nat == "eafrica"
+  prime_eafrica = function(p) p$age %in% c("25-34", "35-44", "45-54") & p$nat == "eafrica",
+  prime_lths = function(p) p$age %in% c("25-34", "35-44", "45-54") & p$edu == "lths",
+  prime_hs = function(p) p$age %in% c("25-34", "35-44", "45-54") & p$edu == "hs",
+  prime_somecol = function(p) p$age %in% c("25-34", "35-44", "45-54") & p$edu == "somecol",
+  prime_ba = function(p) p$age %in% c("25-34", "35-44", "45-54") & p$edu == "ba"
 )
 
 pums_groups <- function(p) {
@@ -99,7 +113,10 @@ pums_groups <- function(p) {
     share_eafrica = list(rep(TRUE, nrow(p)), p$nat == "eafrica"),
     share_enrolled_1624 = list(p$age %in% c("16-19", "20-24"), p$enr == "enrolled"),
     share_college_1624 = list(p$age %in% c("16-19", "20-24"), p$college),
-    share_1624 = list(rep(TRUE, nrow(p)), p$age %in% c("16-19", "20-24")))
+    share_1624 = list(rep(TRUE, nrow(p)), p$age %in% c("16-19", "20-24")),
+    share_ba_25 = list(p$edu != "u25", p$edu == "ba"),
+    share_somecol_25 = list(p$edu != "u25", p$edu == "somecol"),
+    share_hsless_25 = list(p$edu != "u25", p$edu %in% c("lths", "hs")))
   sh <- lapply(names(shares), function(s) {
     v <- share_est(p, shares[[s]][[1]], shares[[s]][[2]])
     data.frame(group = s, n = sum(shares[[s]][[1]] & shares[[s]][[2]]), share = v[1], share_se = sdr_se(v[1], v[-1]))
@@ -129,7 +146,9 @@ shift_terms <- function(c0, c1, j, measure) {
     change = 100 * (sum(N1) / sum(P1) - sum(N0) / sum(P0)))
 }
 
-PUMS_SPECS <- list(AS = c("sex", "age"), ASN = c("sex", "age", "nat"), ASNE = c("sex", "age", "nat", "enr"))
+PUMS_SPECS <- list(AS = c("sex", "age"), ASN = c("sex", "age", "nat"), ASNE = c("sex", "age", "nat", "enr"),
+                   ASNEX = c("sex", "age", "nat", "enr", "edu"),
+                   ASX = c("sex", "age", "edu"))   # order check: education added right after age/sex
 
 pums_decompose <- function(p0, p1, measure = c("lf", "emp")) {
   measure <- match.arg(measure)
@@ -140,7 +159,9 @@ pums_decompose <- function(p0, p1, measure = c("lf", "emp")) {
       age_sex = t$AS[["comp"]],
       nativity = t$ASN[["comp"]] - t$AS[["comp"]],
       enrollment = t$ASNE[["comp"]] - t$ASN[["comp"]],
-      within = t$ASNE[["beh"]])
+      education = t$ASNEX[["comp"]] - t$ASNE[["comp"]],
+      within = t$ASNEX[["beh"]],
+      education_first = t$ASX[["comp"]] - t$AS[["comp"]])
   })
   data.frame(term = rownames(terms), est = terms[, 1],
              se = apply(terms, 1, function(x) sdr_se(x[1], x[-1])), row.names = NULL)

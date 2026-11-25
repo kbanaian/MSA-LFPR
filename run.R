@@ -75,6 +75,9 @@ site <- build_site(cells, s2301, laus, bench)
 site$meta$acs5_latest <- s5[1]
 site$meta$acs5_prev <- if (length(s5) > 1) s5[2] else NULL
 
+# ---- projected demographic drag (State Demographic Center county projections) ----
+site$projection <- tryCatch(project_drag(cell_arrays(cells, "msa")), error = function(e) { message("Projection step failed: ", conditionMessage(e)); NULL })
+
 # ---- PUMS module (5-year windows; downloads once, then uses data/pums extracts) ----
 site$pums <- tryCatch(run_pums(offline), error = function(e) { message("PUMS step failed: ", conditionMessage(e)); NULL })
 

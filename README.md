@@ -8,8 +8,9 @@ The page lives in `docs/` and is served by GitHub Pages. A scheduled GitHub Acti
 1. **Actual vs. age/sex-adjusted LFPR and EPOP.** Each year's change is split over 16 sex × age cells into a *behavior* part (rates within cells) and a *composition* part (population shares), using midpoint (Shapley) weights so the two parts add exactly to the change. The adjusted series accumulates only behavior and is anchored to the latest actual rate.
 2. **Aging-only counterfactual.** Each cell's rate is held at a base year (the first ACS year or a business-cycle peak) while the population mix evolves. Bar charts split the change since the base into the aging mix plus each age × sex group's behavior.
 3. **Labor market by group.** Levels and changes in UR, LFPR and EPOP by sex, age, race/ethnicity and education, with the sex × age cross-cut. Cells are flagged when the published margin of error is 4 pp or more.
-4. **Beyond age and sex (ACS PUMS).** Adds nativity (native-born, East Africa–born, other foreign-born) and school enrollment (ages 16–24) to the cells, then splits the change between 5-year windows into age/sex mix, nativity mix, enrollment mix and within-cell behavior. Standard errors come from the 80 replicate weights (successive difference replication: SE = √(4/80 · Σ(θᵣ − θ)²)) and are shown as 90% MOEs.
-5. **A monthly read** from BLS LAUS (NSA) divided by ACS population 16+, for timeliness between ACS releases.
+4. **Beyond age and sex (ACS PUMS).** Adds nativity (native-born, East Africa–born, other foreign-born), school enrollment (ages 16–24) and educational attainment (ages 25+: less than high school, high school, some college/associate, bachelor's+) to the cells, then splits the change between 5-year windows into age/sex, nativity, enrollment and education mix plus within-cell behavior. Because the split depends on the order the dimensions are added in, the page also reports the education term with education added right after age/sex. Standard errors come from the 80 replicate weights (successive difference replication: SE = √(4/80 · Σ(θᵣ − θ)²)) and are shown as 90% MOEs.
+5. **The demographic drag ahead.** Holds each sex × age group's participation at its pooled rate for the last three ACS years and applies the Minnesota State Demographic Center's 2024 county projections (Benton + Stearns, `data/raw/sdc_projections.csv`) to get the aging-only path, anchored to the latest actual rate. The projections are used only for the *change* in the age/sex mix from the base year. Age-group contributions are measured relative to the average rate, so a growing low-participation group shows up as a drag.
+6. **A monthly read** from BLS LAUS (NSA) divided by ACS population 16+, for timeliness between ACS releases.
 
 ## How the national page maps onto one MSA
 
@@ -30,6 +31,7 @@ R/acs.R           api.census.gov pulls; B23001 label parser; S2301 row matcher
 R/laus.R          BLS API pull (LAUS employment and labor force)
 R/decompose.R     shift-share, counterfactual, monthly rates
 R/pums.R          PUMS download/extract, nativity and enrollment cells, replicate-weight SEs
+R/projections.R   aging-only path from the State Demographic Center county projections
 R/build_site.R    assembles docs/data/site.json
 run.R             fetch what's new -> cache in data/raw -> rebuild site.json
 tests/run_tests.R offline checks (parser and decomposition identities)
@@ -60,7 +62,7 @@ BLS_API_KEY=your_key
 Then, from the project root in RStudio:
 
 ```r
-install.packages(c("httr2", "jsonlite"))
+install.packages(c("httr2", "jsonlite", "data.table", "R.utils"))
 source("run.R")                  # or: Rscript run.R --offline  (no downloads)
 source("tests/run_tests.R")
 ```
@@ -87,6 +89,10 @@ Things the PUMS step does differently from the B23001 series:
 - It excludes the institutionalized population (`PUMS_EXCLUDE_INSTITUTIONAL`), which matches BLS's universe and removes the St. Cloud prison from the male rates.
 - "East Africa–born" uses the birthplace codes for Ethiopia, Eritrea, Kenya, Somalia and Sudan, which are the same in the 2010 and 2024 dictionaries. Children born in Minnesota to East African parents count as native-born.
 - Cells for small groups at older ages are tiny. They carry little weight in the decomposition, but the replicate-weight SEs reflect them.
+
+## Refreshing the projections
+
+The State Demographic Center updates its county projections every few years. To refresh them, download the workbook from mn.gov/demography ("Our Projections"), take the Benton and Stearns rows of the "county age sex" sheet, and save them as `data/raw/sdc_projections.csv` in the same layout: County, EDR, Sex, Age, then one column per year.
 
 ## Caveats
 

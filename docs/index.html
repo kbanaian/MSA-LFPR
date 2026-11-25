@@ -105,6 +105,18 @@ details{margin-top:10px}summary{cursor:pointer;color:var(--s1);font-size:14.5px;
 <div class="scroll"><table class="gt" id="gt"></table></div>
 <p class="note">Green = a good move, red = a bad one (a falling UR or a rising LFPR/EPOP is good); deeper shading = a larger move, maxing at ±4 pp. <span class="flag">†</span> = published margin of error at or above the flag threshold (for changes, the two years' MOEs combined in quadrature). Sex and age rows come from ACS B23001 (civilian 16+). Education rows come from S2301 (ages 25–64; the national page uses 25+). Race/ethnicity rows come from the 5-year S2301, because the 1-year file suppresses small groups for most metros. Cross-cuts work for sex × age only; race and education cross-cuts need ACS microdata (PUMS). A dash means the Census Bureau suppressed the estimate.</p>
 
+<section id="proj" hidden>
+<h2>The demographic drag ahead</h2>
+<p class="lede">What the State Demographic Center's county projections imply if every sex × age group keeps its recent participation rate. This is the aging effect alone, not a forecast. Changes in behavior within groups, like the ones shown above, come on top of it.</p>
+<div class="kpis" id="pk2"></div>
+<div class="ctl"><div><label>Measure</label><div class="seg" id="jm"><button aria-pressed="true" data-v="lfpr">LFPR</button><button aria-pressed="false" data-v="epop">EPOP</button></div></div></div>
+<div class="two">
+ <div class="card"><h4 id="jt">Actual and demographics-only path</h4><div class="sub">Percent, <span class="msa"></span></div><div class="fig" id="f7"><svg></svg><div class="tip"></div></div></div>
+ <div class="card"><h4 id="jbt">Where the drag comes from</h4><div class="sub">Percentage points, by age group: change in its population share × (its rate − the average rate)</div><div class="bars" id="jb"></div></div>
+</div>
+<p class="note" id="jn"></p>
+</section>
+
 <section id="pums" hidden>
 <h2>Beyond age and sex: nativity and school enrollment</h2>
 <p class="lede">The age/sex decomposition counts everything except aging as "behavior," including a changing mix of immigrants and students. ACS microdata (PUMS) lets those two dimensions be added to the cells. Each window is a 5-year PUMS file, and the error bars are 90% margins of error computed from the 80 replicate weights, the Census Bureau's own method.</p>
@@ -112,12 +124,12 @@ details{margin-top:10px}summary{cursor:pointer;color:var(--s1);font-size:14.5px;
 <div class="ctl"><div><label>Measure</label><div class="seg" id="pm"><button aria-pressed="true" data-v="lfpr">LFPR</button><button aria-pressed="false" data-v="epop">EPOP</button></div></div>
 <div><label>Compare</label><div class="seg" id="pp"></div></div></div>
 <div class="two">
- <div class="card"><h4 id="pdt">Change decomposed</h4><div class="sub">Percentage points, with 90% margins of error. Nested order: age/sex, then nativity, then enrollment.</div><div class="bars" id="pdec"></div></div>
+ <div class="card"><h4 id="pdt">Change decomposed</h4><div class="sub">Percentage points, with 90% margins of error. Nested order: age/sex, then nativity, enrollment, education.</div><div class="bars" id="pdec"></div><p class="note" id="pef"></p></div>
  <div class="card"><h4>Population shares</h4><div class="sub">Percent, ± 90% MOE</div><div class="scroll"><table class="gt" id="psh"></table></div></div>
 </div>
 <h3>Rates by group</h3>
 <div class="scroll"><table class="gt" id="prt"></table></div>
-<p class="note">Civilian population 16+<span id="pninst"></span>. "East Africa–born" means born in Somalia, Ethiopia, Eritrea, Kenya or Sudan. Enrollment is attendance at any school or college in the past three months, ages 16–24. <span class="flag">†</span> = 90% MOE ≥ 4 pp. The decomposition adds dimensions in a fixed order, so the split between nativity and enrollment depends on that order. Because the area changes with each PUMA vintage, the 2006–10 vs. 2020–24 comparison is the cleanest.</p>
+<p class="note">Civilian population 16+<span id="pninst"></span>. "East Africa–born" means born in Somalia, Ethiopia, Eritrea, Kenya or Sudan. Enrollment is attendance at any school or college in the past three months, ages 16–24. Education is the highest level completed, ages 25+. <span class="flag">†</span> = 90% MOE ≥ 4 pp. The decomposition adds dimensions in a fixed order, so the split between nativity and enrollment depends on that order. Because the area changes with each PUMA vintage, the 2006–10 vs. 2020–24 comparison is the cleanest.</p>
 </section>
 
 <h2>How the national page maps onto one MSA</h2>
@@ -243,23 +255,38 @@ function tbl(){const fs=document.getElementById('fs').value,fa=document.getEleme
  document.getElementById('thru').textContent=(tmv==='lvl'?'Levels, '+LY:'Change, '+y0+' → '+LY)+` · ACS ${LY} 1-year and ${span5(L5)} 5-year · `+(anyF?'Race and education rows go blank under a subgroup filter; those cross-cuts need PUMS.':'All filters on Overall, so the two blocks match.')}
 seg('tm',v=>{tmv=v;tbl()});seg('tb',v=>{tbv=v;tbl()});
 ['fs','fa'].forEach(i=>document.getElementById(i).addEventListener('change',tbl));tbl();
+// ---------- projection ----------
+if(D.projection){const J=D.projection;document.getElementById('proj').hidden=false;let jmv='lfpr';
+ const at=h=>J[jmv][J.years.indexOf(h)];
+ function jk(){const b=J.actual_base[jmv],H=[J.base+5,J.base+10,J.base+20].filter(h=>J.years.includes(h));
+  document.getElementById('pk2').innerHTML=[[f1(b),`${jmv==='lfpr'?'LFPR':'EPOP'} ${J.base} (actual)`]].concat(H.map(h=>[sg(at(h)-b),`pp from aging alone by ${h}`])).map(([v,l])=>`<div class="kpi"><div class="v">${v}</div><div class="l">${esc(l)}</div></div>`).join('');
+  const h=String(J.base+10),c=J.contrib[h]&&J.contrib[h][jmv];document.getElementById('jbt').textContent=`Where the drag comes from, ${J.base} → ${h}`;
+  if(c){const rows=Object.entries(c).concat([['Total',Object.values(c).reduce((a,b)=>a+b,0)]]);const mx=Math.max(.5,...rows.map(r=>Math.abs(r[1])));
+   document.getElementById('jb').innerHTML=rows.map(([n,v])=>{const w=Math.abs(v)/mx*48,l=v<0?50-w:50,t=n==='Total';return`<div class="br"><span${t?' style="font-weight:700"':''}>${t?n:'Ages '+n}</span><span class="tr"><span class="z" style="left:50%"></span><i style="left:${l}%;width:${Math.max(w,.4)}%;background:${t?css('--ink'):css('--s2')}"></i></span><span class="n">${sg(v)}</span></div>`}).join('')}}
+ const yrs=Y.concat(J.years.filter(y=>y>LY)),JX=yrs.map((_,i)=>i);
+ const d7=lc('f7',()=>({x:JX,xt:JX.filter(i=>yrs[i]%10===0),xtN:JX.filter(i=>yrs[i]%20===0),xl:i=>String(yrs[i]),tl:i=>String(yrs[i]),shade:gaps,
+  series:[{name:'Actual (ACS)',lab:'Actual',v:yrs.map(y=>ix(y)>=0?D[jmv].actual[ix(y)]:null),c:css('--s1'),dots:true},{name:'Aging alone',lab:'Aging alone',v:yrs.map(y=>{const k=J.years.indexOf(y);return k>=0?J[jmv][k]:null}),c:css('--s2'),dash:'6 4'}]}));
+ document.getElementById('jt').textContent='Actual and demographics-only path';
+ document.getElementById('jn').textContent=`Base rates pool ACS ${J.rate_years[0]}–${J.rate_years[J.rate_years.length-1]} by sex and age group; the path is anchored to the ${J.base} actual rate. Projected population shares come from the Minnesota State Demographic Center's 2024 county projections for ${M0.counties}, used only for how the age/sex mix changes from ${J.base}. Ages 16–19 are taken as four-fifths of the 15–19 group. The 65+ share of adults goes from ${J.share65[0].toFixed(1)}% in ${J.base} to ${J.share65[Math.min(10,J.share65.length-1)].toFixed(1)}% in ${J.years[Math.min(10,J.years.length-1)]}.`;
+ jk();seg('jm',v=>{jmv=v;jk();d7()});window.__d7=d7;}
 // ---------- PUMS ----------
 if(D.pums&&D.pums.windows){const P=D.pums,WN=Object.keys(P.windows),Z=1.645;document.getElementById('pums').hidden=false;
  document.getElementById('pareas').innerHTML=WN.map(y=>`<li>${esc(P.windows[y].label)}: ${esc(P.windows[y].area)}</li>`).join('');
  document.getElementById('pninst').textContent=P.noninstitutional?', excluding the institutionalized population (prisons, nursing homes)':'';
  let pmv='lfpr',ppv=0;
  document.getElementById('pp').innerHTML=P.decomp.map((d,i)=>`<button aria-pressed="${i===P.decomp.length-1}" data-v="${i}">${esc(P.windows[d.from].label)} → ${esc(P.windows[d.to].label)}</button>`).join('');ppv=P.decomp.length-1;
- const NM={change:'Total change',age_sex:'Age/sex mix',nativity:'Nativity mix',enrollment:'Enrollment mix (16–24)',within:'Within-cell behavior'};
+ const NM={change:'Total change',age_sex:'Age/sex mix',nativity:'Nativity mix',enrollment:'Enrollment mix (16–24)',education:'Education mix (25+)',within:'Within-cell behavior'};
  const pm=(e,s)=>`${e.toFixed(1)} ± ${(Z*s).toFixed(1)}${Z*s>=M0.moe_flag?'<span class="flag">†</span>':''}`;
  function pd(){const d=P.decomp[ppv];if(!d){document.getElementById('pdec').textContent='Needs at least two windows.';return}
   document.getElementById('pdt').textContent=`${pmv==='lfpr'?'LFPR':'EPOP'} change, ${P.windows[d.from].label} → ${P.windows[d.to].label}, decomposed`;
-  const rows=['age_sex','nativity','enrollment','within','change'].map(k=>d[pmv].find(r=>r.term===k));
+  const rows=['age_sex','nativity','enrollment','education','within','change'].map(k=>d[pmv].find(r=>r.term===k)).filter(Boolean);
+  const ef=d[pmv].find(r=>r.term==='education_first');document.getElementById('pef').textContent=ef?`Order check: education added right after age/sex gives ${sg(ef.est)} ± ${(Z*ef.se).toFixed(1)} pp.`:'';
   const mx=Math.max(1,...rows.map(r=>Math.abs(r.est)+Z*r.se));
   document.getElementById('pdec').innerHTML=rows.map(r=>{const w=Math.abs(r.est)/mx*48,l=r.est<0?50-w:50,lo=50+(r.est-Z*r.se)/mx*48,hi=50+(r.est+Z*r.se)/mx*48,t=r.term==='change';
    return`<div class="br"><span${t?' style="font-weight:700"':''}>${NM[r.term]}</span><span class="tr"><span class="z" style="left:50%"></span><i style="left:${l}%;width:${Math.max(w,.4)}%;background:${t?css('--ink'):css('--s1')}"></i><b style="position:absolute;top:7px;height:2px;left:${lo}%;width:${hi-lo}%;background:${css('--ink')}"></b></span><span class="n">${sg(r.est)}<br><small style="color:var(--mute)">±${(Z*r.se).toFixed(1)}</small></span></div>`}).join('')}
- const SH={share_fb:'Foreign-born, share of 16+',share_eafrica:'East Africa–born, share of 16+',share_1624:'Ages 16–24, share of 16+',share_enrolled_1624:'Enrolled, share of 16–24',share_college_1624:'In college, share of 16–24'};
+ const SH={share_fb:'Foreign-born, share of 16+',share_eafrica:'East Africa–born, share of 16+',share_1624:'Ages 16–24, share of 16+',share_enrolled_1624:'Enrolled, share of 16–24',share_college_1624:'In college, share of 16–24',share_ba_25:"Bachelor's+, share of 25+",share_somecol_25:'Some college/associate, share of 25+',share_hsless_25:'High school or less, share of 25+'};
  document.getElementById('psh').innerHTML='<tr><th></th>'+WN.map(y=>`<th>${esc(P.windows[y].label)}</th>`).join('')+'</tr>'+Object.keys(SH).map(k=>`<tr><td>${SH[k]}</td>`+WN.map(y=>{const r=P.windows[y].shares.find(s=>s.group===k);return`<td>${r?pm(r.share,r.share_se):'—'}</td>`}).join('')+'</tr>').join('');
- const GR=[['total','Total (16+)'],['men','Men'],['women','Women'],['native','Native-born'],['foreignborn','Foreign-born'],['eafrica','East Africa–born'],['otherfb','Other foreign-born'],['y_enrolled','16–24, enrolled'],['y_not','16–24, not enrolled'],['prime','Ages 25–54'],['prime_native','25–54, native-born'],['prime_eafrica','25–54, East Africa–born']];
+ const GR=[['total','Total (16+)'],['men','Men'],['women','Women'],['native','Native-born'],['foreignborn','Foreign-born'],['eafrica','East Africa–born'],['otherfb','Other foreign-born'],['y_enrolled','16–24, enrolled'],['y_not','16–24, not enrolled'],['prime','Ages 25–54'],['prime_native','25–54, native-born'],['prime_eafrica','25–54, East Africa–born'],['prime_lths','25–54, less than high school'],['prime_hs','25–54, high school'],['prime_somecol','25–54, some college/associate'],['prime_ba',"25–54, bachelor's+"]];
  function prt(){document.getElementById('prt').innerHTML='<thead><tr><th></th>'+WN.map(y=>`<th>${esc(P.windows[y].label)}</th><th>n</th>`).join('')+'</tr></thead><tbody>'+GR.map(([k,n])=>`<tr><td>${n}</td>`+WN.map(y=>{const r=P.windows[y].rates.find(g=>g.group===k);return r?`<td>${pm(r[pmv],r[pmv+'_se'])}</td><td style="color:var(--mute)">${r.n.toLocaleString()}</td>`:'<td>—</td><td></td>'}).join('')+'</tr>').join('')+'</tbody>'}
  pd();prt();seg('pm',v=>{pmv=v;pd();prt()});seg('pp',v=>{ppv=+v;pd()});}
 // ---------- swap table and sources ----------
@@ -273,7 +300,7 @@ const SW=[['Monthly actual LFPR/EPOP','CPS, monthly, seasonally adjusted','ACS 1
 ['Small-sample flag (†)','Cell sample counts','Published ACS margins of error','—']];
 document.getElementById('sw').innerHTML=SW.map(r=>'<tr>'+r.map(c=>`<td>${c}</td>`).join('')+'</tr>').join('');
 document.getElementById('src').textContent=`Sources: U.S. Census Bureau, American Community Survey 1-year tables B23001 and S2301 (${FY}–${LY}) and 5-year S2301; BLS Local Area Unemployment Statistics (through ${M0.laus_last}). Calculations follow the method notes on econvitals.org/labor/demographicdetail. Rates in the top charts use the civilian population 16+ (B23001); S2301 headline rates use the total population 16+ and can differ slightly.`;
-const all=()=>{['f1','f2','f3','f4','f5','f6'].forEach(i=>document.getElementById(i)._d());bars('b1','lfpr');bars('b2','epop')};
+const all=()=>{['f1','f2','f3','f4','f5','f6','f7'].forEach(i=>{const f=document.getElementById(i);f&&f._d&&f._d()});bars('b1','lfpr');bars('b2','epop')};
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',all);new MutationObserver(all).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 }
 }
