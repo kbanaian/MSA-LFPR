@@ -8,7 +8,8 @@ The page lives in `docs/` and is served by GitHub Pages. A scheduled GitHub Acti
 1. **Actual vs. age/sex-adjusted LFPR and EPOP.** Each year's change is split over 16 sex × age cells into a *behavior* part (rates within cells) and a *composition* part (population shares), using midpoint (Shapley) weights so the two parts add exactly to the change. The adjusted series accumulates only behavior and is anchored to the latest actual rate.
 2. **Aging-only counterfactual.** Each cell's rate is held at a base year (the first ACS year or a business-cycle peak) while the population mix evolves. Bar charts split the change since the base into the aging mix plus each age × sex group's behavior.
 3. **Labor market by group.** Levels and changes in UR, LFPR and EPOP by sex, age, race/ethnicity and education, with the sex × age cross-cut. Cells are flagged when the published margin of error is 4 pp or more.
-4. **A monthly read** from BLS LAUS (NSA) divided by ACS population 16+, for timeliness between ACS releases.
+4. **Beyond age and sex (ACS PUMS).** Adds nativity (native-born, East Africa–born, other foreign-born) and school enrollment (ages 16–24) to the cells, then splits the change between 5-year windows into age/sex mix, nativity mix, enrollment mix and within-cell behavior. Standard errors come from the 80 replicate weights (successive difference replication: SE = √(4/80 · Σ(θᵣ − θ)²)) and are shown as 90% MOEs.
+5. **A monthly read** from BLS LAUS (NSA) divided by ACS population 16+, for timeliness between ACS releases.
 
 ## How the national page maps onto one MSA
 
@@ -28,10 +29,13 @@ R/config.R        geography, peaks, age groups, S2301 rows  <- edit this to chan
 R/acs.R           api.census.gov pulls; B23001 label parser; S2301 row matcher
 R/laus.R          BLS API pull (LAUS employment and labor force)
 R/decompose.R     shift-share, counterfactual, monthly rates
+R/pums.R          PUMS download/extract, nativity and enrollment cells, replicate-weight SEs
 R/build_site.R    assembles docs/data/site.json
 run.R             fetch what's new -> cache in data/raw -> rebuild site.json
 tests/run_tests.R offline checks (parser and decomposition identities)
+tests/test_pums.R offline checks of the PUMS module on synthetic microdata
 data/raw/*.csv    cached inputs (committed, so the page rebuilds without a key)
+data/pums/*.csv.gz  area extracts of each 5-year PUMS person file (downloaded once)
 docs/index.html   the page; reads docs/data/site.json
 .github/workflows/update.yml   scheduled update
 ```
@@ -66,6 +70,23 @@ To preview the page, serve `docs/` over http (opening the file directly blocks t
 ## Changing the metro
 
 Edit the geography block in `R/config.R` (CBSA code, state FIPS, names), delete `data/raw/*.csv`, and run `run.R` with a key. The page picks up names, years and peaks from `site.json`.
+
+## PUMS windows and geography
+
+The PUMA boundaries change with each decade, so each 5-year file covers a slightly different area:
+
+| Window | PUMAs | Area |
+|---|---|---|
+| 2006–10 | 2000 PUMA 00800 | Benton + Stearns (exactly the MSA) |
+| 2015–19 | 2010 PUMA 00900 | Stearns County only (2010 PUMA 01000 lumped Benton with all of Sherburne) |
+| 2020–24 | 2020 PUMAs 00901, 01001 | Benton + Stearns + northwest Sherburne |
+
+The 2006–10 vs. 2020–24 comparison is the cleanest. The extracts are pulled from the Census Bureau's PUMS CSV files (www2.census.gov, no key needed) by the Action and saved under `data/pums/`. Edit `PUMS_WINDOWS` in `R/config.R` to add windows. A 5-year file whose records carry two PUMA vintages (for example, 2012–16) would need the vintage-specific codes handled per record.
+
+Things the PUMS step does differently from the B23001 series:
+- It excludes the institutionalized population (`PUMS_EXCLUDE_INSTITUTIONAL`), which matches BLS's universe and removes the St. Cloud prison from the male rates.
+- "East Africa–born" uses the birthplace codes for Ethiopia, Eritrea, Kenya, Somalia and Sudan, which are the same in the 2010 and 2024 dictionaries. Children born in Minnesota to East African parents count as native-born.
+- Cells for small groups at older ages are tiny. They carry little weight in the decomposition, but the replicate-weight SEs reflect them.
 
 ## Caveats
 

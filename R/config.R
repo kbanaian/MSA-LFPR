@@ -53,3 +53,19 @@ S2301_ROWS <- c(
   somecol   = "!!Some college or associate's degree$",
   ba        = "!!Bachelor's degree or higher$"
 )
+
+# --- PUMS (5-year files) ------------------------------------------------------
+# Each window is a 5-year PUMS file, named by its last year. The PUMA vintage
+# changes across files, so the area changes too; the label says what it covers.
+PUMS_WINDOWS <- list(
+  "2010" = list(label = "2006\u201310", pumas = "00800",
+                area = "Benton + Stearns (2000 PUMA 00800; identical to the MSA)"),
+  "2019" = list(label = "2015\u201319", pumas = "00900",
+                area = "Stearns County only (2010 PUMA 00900; Benton was grouped with all of Sherburne)"),
+  "2024" = list(label = "2020\u201324", pumas = c("00901", "01001"),
+                area = "Benton + Stearns + NW Sherburne (2020 PUMAs 00901, 01001)")
+)
+PUMS_EXCLUDE_INSTITUTIONAL <- TRUE   # match BLS's civilian noninstitutional universe
+# Place-of-birth codes for East Africa that are identical in the 2010 and 2024
+# dictionaries: Ethiopia, Eritrea, Kenya, Somalia, Sudan
+PUMS_EAST_AFRICA <- c(416, 417, 427, 448, 451)

@@ -75,6 +75,9 @@ site <- build_site(cells, s2301, laus, bench)
 site$meta$acs5_latest <- s5[1]
 site$meta$acs5_prev <- if (length(s5) > 1) s5[2] else NULL
 
+# ---- PUMS module (5-year windows; downloads once, then uses data/pums extracts) ----
+site$pums <- tryCatch(run_pums(offline), error = function(e) { message("PUMS step failed: ", conditionMessage(e)); NULL })
+
 dir.create("docs/data", FALSE, TRUE)
 jsonlite::write_json(site, "docs/data/site.json", auto_unbox = TRUE, null = "null", na = "null", digits = NA)
 message("Wrote docs/data/site.json (ACS through ", site$meta$acs_latest, ", LAUS through ", site$meta$laus_last, ")")
