@@ -1,0 +1,48 @@
+name: Update data and page
+
+on:
+  schedule:
+    # 13:23 UTC on the 4th and 19th: picks up LAUS metro releases (about five
+    # weeks after the reference month) and the ACS 1-year (Sept) and 5-year (Dec/Jan)
+    - cron: "23 13 4,19 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::httr2
+            any::jsonlite
+
+      - name: Fetch new data and rebuild site.json
+        env:
+          CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
+          BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
+        run: Rscript run.R
+
+      - name: Run checks
+        run: Rscript tests/run_tests.R
+
+      - name: Commit if anything changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/raw docs/data
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "Data update $(date -u +%Y-%m-%d)"
+            git push
+          fi

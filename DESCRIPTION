@@ -1,0 +1,12 @@
+Package: msalfpr
+Title: Demographic Decomposition of Labor Force Participation for One MSA
+Version: 0.1.0
+Authors@R: person("King", "Banaian", role = c("aut", "cre"))
+Description: Rebuilds the econvitals.org demographic-detail analysis of labor
+    force participation and employment-population ratios for a single
+    metropolitan area, using ACS 1- and 5-year tables and BLS LAUS.
+License: MIT
+Encoding: UTF-8
+Imports:
+    httr2,
+    jsonlite

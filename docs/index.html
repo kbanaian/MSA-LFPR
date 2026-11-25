@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MSA labor force demographics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a regional econ-data desk; calm, exact, reads like the econvitals original
+   IDEA: the national CPS page, re-plumbed for one metro; same sections, local pipes
+   PICTURE: actual vs age/sex-adjusted lines, the metro aging made visible
+   COLOUR and TYPE: white sheet, blue actual, orange adjusted, grey benchmarks; Source Sans/Serif
+   LAYOUT: two-up chart pairs, controls in one row, by-group table, rebuild notes */
+:root{color-scheme:light dark;--bg:light-dark(#fff,#15171a);--ink:light-dark(#1d1f22,#e9eaec);--mute:light-dark(#5f646b,#a2a7ae);--line:light-dark(#dfe2e6,#30343a);--panel:light-dark(#f6f7f9,#1d2024);
+--s1:light-dark(#257de0,#338ced);--s2:light-dark(#f47230,#e76624);--s3:light-dark(#00a884,#00a888);--s4:light-dark(#6a4ce2,#9887ef);--s5:light-dark(#ee7fac,#e24d8b);--s6:light-dark(#008a17,#0aac23);--bench:light-dark(#8a9097,#7d838a);
+--good:light-dark(#1f8a3b,#3fbf62);--bad:light-dark(#c83434,#ef6464);--acc:light-dark(#9a1b30,#e0667a)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Source Sans 3",system-ui,sans-serif;overflow-x:clip}
+.top{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;padding:14px max(5vw,16px);border-bottom:1px solid var(--line)}
+.top b{font-size:19px}.top span,.top a{color:var(--mute);font-size:14px}a{color:var(--s1)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 max(4vw,16px) 64px}
+h1{font:600 clamp(28px,4vw,40px)/1.1 "Source Serif 4",Georgia,serif;margin:28px 0 10px;text-wrap:balance}
+h2{font:600 22px/1.2 "Source Serif 4",Georgia,serif;margin:44px 0 6px;padding-bottom:8px;border-bottom:2px solid var(--ink)}
+h3{font-size:16px;margin:18px 0 4px}
+p{max-width:72ch}.lede{color:var(--mute);font-size:15.5px}.note{color:var(--mute);font-size:13.5px;max-width:none}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin:18px 0 6px}
+.kpi{background:var(--bg);padding:14px 16px}.kpi .v{font:600 clamp(26px,3.2vw,34px)/1.1 "Source Serif 4",serif;font-variant-numeric:tabular-nums}.kpi .l{font-size:13.5px;color:var(--mute)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr));gap:22px}
+.card{border:1px solid var(--line);border-radius:6px;padding:12px 14px 8px}
+.card h4{margin:0;font-size:15.5px}.card .sub{font-size:13px;color:var(--mute)}
+.fig{position:relative;min-height:300px;margin-top:6px}.fig>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.fig text{font:12.5px "Source Sans 3",sans-serif;fill:var(--mute)}.fig .lab{font-weight:700;font-size:13px}
+.tip{position:absolute;pointer-events:none;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:6px 9px;font-size:13px;line-height:1.35;box-shadow:0 2px 8px #0002;display:none;white-space:nowrap;z-index:2;font-variant-numeric:tabular-nums}
+.tip i{display:inline-block;width:10px;height:3px;margin-right:5px;vertical-align:middle}
+.ctl{display:flex;flex-wrap:wrap;gap:16px 22px;align-items:end;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin:14px 0}
+.ctl label{display:block;font-size:12.5px;color:var(--mute);font-weight:600;margin-bottom:4px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden;background:var(--bg)}
+.seg button{font:inherit;font-size:14.5px;border:0;background:none;color:var(--ink);padding:0 14px;min-height:40px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--s1);color:#fff}
+.seg button:focus-visible,select:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
+select{font:inherit;font-size:16px;min-height:40px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink);padding:0 8px}
+select:disabled{opacity:.5}
+.bars{display:grid;gap:6px;margin-top:8px}.br{display:grid;grid-template-columns:9.5em 1fr 4.2em;gap:8px;align-items:center;font-size:14px}
+.br .tr{position:relative;height:16px;background:var(--panel);border-radius:3px}.br .tr i{position:absolute;top:0;bottom:0;border-radius:3px}.br .tr .z{position:absolute;top:-3px;bottom:-3px;width:1px;background:var(--mute)}
+.br .n{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+table.gt{border-collapse:collapse;width:100%;font-size:14.5px;font-variant-numeric:tabular-nums}
+.gt th,.gt td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.gt th:first-child,.gt td:first-child{text-align:left}.gt .sec td{font-weight:700;font-size:12.5px;color:var(--mute);background:var(--panel);text-align:left}
+.gt thead th{font-size:13px;color:var(--mute);vertical-align:bottom}.gt .blk{border-left:2px solid var(--line)}.gt .tot td{font-weight:700;border-top:2px solid var(--ink)}
+.swap{width:100%;border-collapse:collapse;font-size:14.5px}.swap th,.swap td{border-bottom:1px solid var(--line);padding:8px;vertical-align:top;text-align:left}.swap th{font-size:13px;color:var(--mute)}
+pre{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;font-size:13px;overflow-x:auto}
+.cp{font:inherit;font-size:14px;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink);cursor:pointer}
+details{margin-top:10px}summary{cursor:pointer;color:var(--s1);font-size:14.5px;min-height:32px}
+.flag{color:var(--acc);font-weight:700}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mute)}.stack td:empty{display:none}.br{grid-template-columns:7.5em 1fr 3.6em}}
+</style><script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script></head><body>
+<div class="top"><b>Dashboard</b><span>Demographic employment detail · <span class="msa">this MSA</span> (<span class="cty"></span>)</span><a href="https://econvitals.org/labor/demographicdetail/">← National version</a><a href="https://github.com/kbanaian/MSA-LFPR">Code and data</a></div>
+<div class="wrap">
+<h1 id="h1">Labor force participation and employment: demographic detail</h1>
+<p class="lede">A single-metro rebuild of the econvitals national demographic-detail page. It keeps the same three experiments: actual vs. age/sex-adjusted rates, an aging-only counterfactual from a chosen base year, and a by-group table. The data underneath had to change, because the CPS can't support a single metro. The plumbing is laid out at the bottom of the page.</p>
+<div class="kpis" id="kpis"></div>
+<p class="note" id="kn"></p>
+
+<h2>Actual vs. age/sex-adjusted</h2>
+<p class="lede">Each year's change is split into a behavior part (rates within sex × age cells moving) and a composition part (the population mix shifting). Only the behavior part is accumulated, then anchored to the latest actual rate. The gap between the lines is how much the changing age/sex mix has moved the headline since the first year.</p>
+<div class="ctl"><div><label>Benchmarks</label><div class="seg" id="bm"><button aria-pressed="false" data-v="off">None</button><button aria-pressed="true" data-v="state" class="stn">State</button><button aria-pressed="false" data-v="us">U.S.</button></div></div></div>
+<div class="two">
+ <div class="card"><h4>Labor force participation rate, actual vs. age/sex-adjusted</h4><div class="sub">Percent, <span class="msa"></span>, annual</div><div class="fig" id="f1"><svg></svg><div class="tip"></div></div></div>
+ <div class="card"><h4>Employment–population ratio, actual vs. age/sex-adjusted</h4><div class="sub">Percent, <span class="msa"></span>, annual</div><div class="fig" id="f2"><svg></svg><div class="tip"></div></div></div>
+</div>
+<details><summary>Show data table</summary><div class="scroll"><table class="gt" id="dt"></table></div></details>
+
+<h3>Monthly read between ACS releases</h3>
+<p class="note">ACS arrives about nine months after the year ends. For timeliness, the page divides BLS LAUS labor force and employment (not seasonally adjusted) by ACS civilian population 16+, interpolated by month and extended past the last ACS year at its trailing five-year growth rate. LAUS and ACS levels need not agree (different survey controls; the ACS denominator includes the institutional population), so read the LAUS line for direction, not level. The extrapolated denominator also means the most recent months partly reflect a population assumption.</p>
+<div class="ctl"><div><label>Measure</label><div class="seg" id="mm"><button aria-pressed="true" data-v="lfpr">LFPR</button><button aria-pressed="false" data-v="epop">EPOP</button></div></div></div>
+<div class="card"><h4>LAUS-based rate, monthly and 12-month average, with ACS annual points</h4><div class="sub" id="msub"></div><div class="fig" id="f3"><svg></svg><div class="tip"></div></div></div>
+
+<h3>Demographic contributions to the change</h3>
+<p class="note">Each line is a group's cumulative behavior contribution (percentage points) to the change since the first year, chained year to year. The national page shows 5-year trailing averages of monthly data; with annual ACS points, the cumulative path is easier to read.</p>
+<div class="ctl"><div><label>Measure</label><div class="seg" id="cm"><button aria-pressed="true" data-v="lfpr">LFPR</button><button aria-pressed="false" data-v="epop">EPOP</button></div></div>
+<div><label>Show</label><div class="seg" id="cg"><button aria-pressed="false" data-v="sex">By sex</button><button aria-pressed="true" data-v="age">By age</button><button aria-pressed="false" data-v="as">Age × sex</button></div></div></div>
+<div class="card"><div class="fig" id="f4"><svg></svg><div class="tip"></div></div></div>
+
+<h2>Aging-only counterfactual, since a chosen base year</h2>
+<p class="lede">The opposite experiment: hold every sex × age cell's rate at its base-year value and let only the population mix evolve. The national page offers the 2000–01, 2007 and 2019–20 peaks. Here, the bases are the first ACS year in the data and whichever configured business-cycle peaks it covers.</p>
+<div class="ctl"><div><label>Base year</label><div class="seg" id="pk"></div></div></div>
+<div class="two">
+ <div class="card"><h4>Participation, actual vs. aging-only</h4><div class="fig" id="f5"><svg></svg><div class="tip"></div></div></div>
+ <div class="card"><h4>Employment–population, actual vs. aging-only</h4><div class="fig" id="f6"><svg></svg><div class="tip"></div></div></div>
+</div>
+<div class="two" style="margin-top:18px">
+ <div class="card"><h4>LFPR change, base → <span class="ly"></span>, decomposed</h4><div class="sub">Percentage points: aging mix plus each group's behavior</div><div class="bars" id="b1"></div></div>
+ <div class="card"><h4>EPOP change, base → <span class="ly"></span>, decomposed</h4><div class="sub">Percentage points: aging mix plus each group's behavior</div><div class="bars" id="b2"></div></div>
+</div>
+
+<h2>Labor market by group</h2>
+<p class="note" id="thru"></p>
+<div class="ctl">
+ <div><label>Show</label><div class="seg" id="tm"><button aria-pressed="true" data-v="chg">Change (pp)</button><button aria-pressed="false" data-v="lvl">Level (%)</button></div></div>
+ <div><label>Change from → <span class="ly"></span></label><div class="seg" id="tb"><button aria-pressed="true" data-v="peak" id="tbp">Peak</button><button aria-pressed="false" data-v="prev">Year ago</button></div></div>
+ <div><label for="fs">Sex</label><select id="fs"><option value="all">Overall (break out)</option><option value="0">Men</option><option value="1">Women</option></select></div>
+ <div><label for="fa">Age</label><select id="fa"><option value="all">Overall (break out)</option><option>16–24</option><option>25–54</option><option>55+</option><option>25+</option></select></div>
+ <div><label for="fr">Race / ethnicity</label><select id="fr" disabled><option>Overall (needs PUMS)</option></select></div>
+ <div><label for="fe">Education</label><select id="fe" disabled><option>Overall (needs PUMS)</option></select></div>
+</div>
+<div class="scroll"><table class="gt" id="gt"></table></div>
+<p class="note">Green = a good move, red = a bad one (a falling UR or a rising LFPR/EPOP is good); deeper shading = a larger move, maxing at ±4 pp. <span class="flag">†</span> = published margin of error at or above the flag threshold (for changes, the two years' MOEs combined in quadrature). Sex and age rows come from ACS B23001 (civilian 16+). Education rows come from S2301 (ages 25–64; the national page uses 25+). Race/ethnicity rows come from the 5-year S2301, because the 1-year file suppresses small groups for most metros. Cross-cuts work for sex × age only; race and education cross-cuts need ACS microdata (PUMS). A dash means the Census Bureau suppressed the estimate.</p>
+
+<h2>How the national page maps onto one MSA</h2>
+<div class="scroll"><table class="swap stack"><thead><tr><th>Piece of the national page</th><th>National source</th><th>Single-MSA replacement</th><th>What you give up</th></tr></thead><tbody id="sw"></tbody></table></div>
+<p class="note" style="margin-top:22px" id="src"></p>
+</div>
+<script>
+{
+const fail=m=>{document.getElementById('h1').textContent='Data did not load';document.getElementById('kn').textContent=m};
+fetch('data/site.json').then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(run).catch(e=>fail('Could not read data/site.json ('+e.message+'). Opened from disk? Serve the docs folder over http instead (see README).'));
+function run(D){
+const M0=D.meta, Y=D.years, ix=y=>Y.indexOf(+y), LI=Y.length-1, LY=Y[LI], FY=Y[0];
+const css=n=>`var(${n})`, esc=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+const f1=v=>v==null?'–':v.toFixed(1), sg=v=>(v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(1);
+const AGEG={'16–24':[0,1],'25–54':[2,3,4],'55+':[5,6,7],'25+':[2,3,4,5,6,7]};
+document.querySelectorAll('.msa').forEach(e=>e.textContent=M0.msa_name);document.querySelectorAll('.cty').forEach(e=>e.textContent=M0.counties);
+document.querySelectorAll('.ly').forEach(e=>e.textContent=LY);document.querySelectorAll('.stn').forEach(e=>e.textContent=M0.state_name);
+const gaps=Y.map((y,i)=>D.lfpr.actual[i]==null?[i-1,i+1]:null).filter(Boolean);
+// ---------- generic line chart ----------
+function lc(id,get){
+ const fig=document.getElementById(id), s=fig.querySelector('svg'), tip=fig.querySelector('.tip');
+ const draw=()=>{const W=s.clientWidth,H=s.clientHeight;if(!W)return;const c=get();const nar=W<520;
+  const m={l:38,r:nar?(c.rN||96):(c.r||118),t:10,b:24};
+  const all=c.series.flatMap(e=>e.v.filter(v=>v!=null));let lo=Math.min(...all,...(c.zero?[0]:[])),hi=Math.max(...all,...(c.zero?[0]:[]));
+  const st=[.2,.5,1,2,5].find(k=>(hi-lo)/k<=6)||10;lo=Math.floor((lo-(hi-lo)*.06)/st)*st;hi=Math.ceil((hi+(hi-lo)*.06)/st)*st;
+  const n=c.x.length,X=i=>m.l+i/(n-1)*(W-m.l-m.r),Yp=v=>m.t+(hi-v)/(hi-lo)*(H-m.t-m.b);
+  let g='';(c.shade||[]).forEach(([a,b])=>{g+=`<rect x="${X(a)}" y="${m.t}" width="${X(b)-X(a)}" height="${H-m.t-m.b}" style="fill:${css('--panel')}"/>`});
+  for(let v=lo;v<=hi+1e-9;v+=st){g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Yp(v)}" y2="${Yp(v)}" style="stroke:${css(Math.abs(v)<1e-9&&c.zero?'--mute':'--line')}"/><text x="${m.l-6}" y="${Yp(v)+4}" text-anchor="end">${+v.toFixed(1)}</text>`}
+  c.xt.forEach(i=>{if(nar&&c.xtN&&!c.xtN.includes(i))return;g+=`<text x="${X(i)}" y="${H-6}" text-anchor="middle">${c.xl(i)}</text>`});
+  const labs=[];
+  c.series.forEach(e=>{let d='',pen=0;e.v.forEach((v,i)=>{if(v==null){pen=0;return}d+=(pen?'L':'M')+X(i).toFixed(1)+','+Yp(v).toFixed(1);pen=1});
+   g+=`<path d="${d}" style="fill:none;stroke:${e.c}" stroke-width="${e.w??2}" ${e.dash?`stroke-dasharray="${e.dash}"`:''} stroke-linejoin="round" ${e.o?`opacity="${e.o}"`:''}/>`;
+   if(e.dots)e.v.forEach((v,i)=>{if(v!=null)g+=`<circle cx="${X(i)}" cy="${Yp(v)}" r="4" style="fill:${e.c};stroke:${css('--bg')}" stroke-width="2"/>`});
+   if(e.name&&!e.nolab){let li=e.v.length-1;while(li>=0&&e.v[li]==null)li--;if(li>=0)labs.push({y:Yp(e.v[li]),x:X(li),t:e.lab||e.name,c:e.c,v:e.v[li]})}});
+  labs.sort((a,b)=>a.y-b.y);for(let i=1;i<labs.length;i++)if(labs[i].y-labs[i-1].y<15)labs[i].y=labs[i-1].y+15;
+  labs.forEach(l=>{g+=`<rect x="${l.x+6}" y="${l.y-6}" width="9" height="3" style="fill:${l.c}"/><text class="lab" x="${l.x+18}" y="${l.y+4}" style="fill:${css('--ink')}">${esc(l.t)} ${l.v.toFixed(1)}</text>`});
+  g+=`<line id="${id}x" y1="${m.t}" y2="${H-m.b}" style="stroke:${css('--mute')}" stroke-dasharray="3 3" visibility="hidden"/><rect x="${m.l}" y="0" width="${W-m.l-m.r}" height="${H}" fill="transparent" id="${id}h"/>`;
+  s.innerHTML=g;const hr=s.querySelector('#'+id+'h'),xl=s.querySelector('#'+id+'x');
+  hr.addEventListener('pointermove',ev=>{const r=s.getBoundingClientRect();const i=Math.max(0,Math.min(n-1,Math.round((ev.clientX-r.left-m.l)/(W-m.l-m.r)*(n-1))));
+   const rows=c.series.filter(e=>e.name&&e.v[i]!=null);xl.setAttribute('x1',X(i));xl.setAttribute('x2',X(i));xl.setAttribute('visibility','visible');
+   tip.innerHTML=`<b>${esc(c.tl(i))}</b><br>`+(rows.length?rows.map(e=>`<i style="background:${e.c}"></i>${esc(e.name)}: ${c.fmt?c.fmt(e.v[i]):e.v[i].toFixed(2)}`).join('<br>'):'no data');
+   tip.style.display='block';const tx=X(i)+12;tip.style.left=(tx+tip.offsetWidth>W?X(i)-tip.offsetWidth-12:tx)+'px';tip.style.top=m.t+'px'});
+  hr.addEventListener('pointerleave',()=>{tip.style.display='none';xl.setAttribute('visibility','hidden')})};
+ const ro=new ResizeObserver(draw);ro.observe(s);fig._d=draw;return draw}
+function seg(id,cb){const el=document.getElementById(id);el.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{el.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));cb(b.dataset.v)}))}
+const YX=Y.map((_,i)=>i),yl=i=>"'"+String(Y[i]).slice(2),yt=i=>Y[i]+(D.lfpr.actual[i]==null?' (no 1-year ACS)':'');
+const ev=Y.length>16?4:2,xt=YX.filter(i=>Y[i]%ev===0),xtN=YX.filter(i=>Y[i]%(2*ev)===0);
+// ---------- headline and KPIs ----------
+{const L=D.lfpr,E=D.epop,a=L.actual,e=E.actual,dl=a[LI]-a[0];
+ const lead=Math.abs(L.comp)>Math.abs(L.beh)?'Aging, not behavior,':'Behavior, more than aging,';
+ document.getElementById('h1').textContent=`${lead} drives ${M0.msa_short}'s ${dl<0?'lower':'higher'} participation since ${FY}`;
+ const k=[[f1(a[LI]),`LFPR ${LY} (${sg(dl)} pp since ${FY})`],[sg(L.comp),`pp of LFPR change from the shifting age/sex mix, ${FY}–${String(LY).slice(2)}`],[sg(L.beh),'pp from behavior within sex × age cells'],[f1(e[LI]),`EPOP ${LY} (${sg(e[LI]-e[0])} pp; behavior ${sg(E.beh)}, mix ${sg(E.comp)})`]];
+ document.getElementById('kpis').innerHTML=k.map(([v,l])=>`<div class="kpi"><div class="v">${v}</div><div class="l">${esc(l)}</div></div>`).join('');
+ document.getElementById('kn').textContent=`ACS 1-year, civilian population 16+, ${FY}–${LY}${gaps.length?' (no standard 2020 release)':''}. Composition and behavior are chained midpoint (Shapley) shift-share terms across 16 sex × age cells, so they sum exactly to the actual change. Data updated ${M0.generated}.`}
+// ---------- section 1 ----------
+let bmv='state';
+const top=m=>()=>{const s=[{name:'Actual',v:D[m].actual,c:css('--s1'),dots:true},{name:'Age/sex-adjusted',lab:'Adjusted',v:D[m].adjusted,c:css('--s2'),dots:true}];
+ if(bmv!=='off')s.unshift({name:bmv==='state'?M0.state_name:'U.S.',lab:bmv==='state'?'State':'U.S.',v:D.bench[bmv][m],c:css('--bench'),dash:'5 4',w:1.5});
+ return{x:YX,xt,xtN,xl:yl,tl:yt,series:s,shade:gaps}};
+const d1=lc('f1',top('lfpr')),d2=lc('f2',top('epop'));
+seg('bm',v=>{bmv=v;d1();d2()});
+document.getElementById('dt').innerHTML=`<tr><th>Year</th><th>LFPR actual</th><th>LFPR adjusted</th><th>EPOP actual</th><th>EPOP adjusted</th><th>${esc(M0.state_name)} LFPR</th><th>U.S. LFPR</th></tr>`+Y.map((y,i)=>D.lfpr.actual[i]==null?'':`<tr><td>${y}</td><td>${f1(D.lfpr.actual[i])}</td><td>${f1(D.lfpr.adjusted[i])}</td><td>${f1(D.epop.actual[i])}</td><td>${f1(D.epop.adjusted[i])}</td><td>${f1(D.bench.state.lfpr[i])}</td><td>${f1(D.bench.us.lfpr[i])}</td></tr>`).join('');
+// ---------- monthly ----------
+let mmv='lfpr';const M=D.monthly,MX=M.months.map((_,i)=>i);
+const mname=s=>new Date(s+'-15').toLocaleDateString('en-US',{month:'short',year:'numeric'});
+document.getElementById('msub').textContent=`Percent, ${M0.msa_name}, ${mname(M.months[0])} – ${mname(M0.laus_last)}. Gaps are months BLS did not publish.`;
+const acsDots=m=>M.months.map(s=>{const [y,mo]=s.split('-').map(Number);return mo===7&&ix(y)>=0?D[m].actual[ix(y)]:null});
+const jan=MX.filter(i=>M.months[i].endsWith('-01'));
+const d3=lc('f3',()=>({x:MX,xt:jan.filter(i=>+M.months[i].slice(0,4)%2===0),xtN:jan.filter(i=>+M.months[i].slice(0,4)%4===0),xl:i=>"'"+M.months[i].slice(2,4),tl:i=>M.months[i],
+ series:[{name:'LAUS monthly (NSA)',v:M[mmv],c:css('--s1'),w:1,o:.45,nolab:true},{name:'LAUS 12-mo avg',lab:'12-mo avg',v:M[mmv+'12'],c:css('--s1'),w:2.25},{name:'ACS annual',lab:'ACS',v:acsDots(mmv),c:css('--s2'),dots:true,w:0}]}));
+seg('mm',v=>{mmv=v;d3()});
+// ---------- contributions ----------
+let cmv='lfpr',cgv='age';
+const grp={sex:[['Men',[0,1,2,3,4,5,6,7]],['Women',[8,9,10,11,12,13,14,15]]],age:Object.entries(AGEG).slice(0,3).map(([k,a])=>[k,a.concat(a.map(i=>i+8))]),
+ as:[].concat(...Object.entries(AGEG).slice(0,3).map(([k,a])=>[['Men '+k,a],['Women '+k,a.map(i=>i+8)]]))};
+const pal=['--s1','--s2','--s3','--s4','--s5','--s6'];
+const d4=lc('f4',()=>{const cum=D[cmv].cum;const s=[{name:'Overall',v:cum.map(r=>r&&r.reduce((a,b)=>a+b,0)),c:css('--ink'),w:2.5}];
+ grp[cgv].forEach(([n,ids],j)=>s.push({name:n,v:cum.map(r=>r&&ids.reduce((a,i)=>a+r[i],0)),c:css(pal[j])}));
+ return{x:YX,xt,xtN,xl:yl,tl:yt,series:s,zero:true,r:120,rN:96,fmt:v=>sg(v)+' pp'}});
+seg('cm',v=>{cmv=v;d4()});seg('cg',v=>{cgv=v;d4()});
+// ---------- counterfactual ----------
+const B=M0.bases.map(String);let pkv=B[B.length-1];
+document.getElementById('pk').innerHTML=B.map(b=>`<button aria-pressed="${b===pkv}" data-v="${b}">${b}${M0.peaks.includes(+b)?' peak':b==FY?' (first year)':''}</button>`).join('');
+const cfc=m=>()=>{const b=+pkv,cf=D[m].cf[pkv].cf.map((v,i)=>Y[i]>=b?v:null);
+ return{x:YX,xt,xtN,xl:yl,tl:yt,shade:gaps,
+  series:[{name:'Actual',v:D[m].actual,c:css('--s1'),dots:true},{name:'Aging-only from '+b,lab:'Aging',v:cf,c:css('--s2'),dash:'6 4',dots:true}]}};
+const d5=lc('f5',cfc('lfpr')),d6=lc('f6',cfc('epop'));
+function bars(id,m){const ia=ix(pkv),cf=D[m].cf[pkv],act=D[m].actual;const k=cf.contrib[LI];
+ const rows=[['Aging mix',cf.cf[LI]-act[ia],1]].concat(grp.as.map(([n,ids])=>[n,ids.reduce((a,i)=>a+k[i],0)])).concat([['Total change',act[LI]-act[ia],2]]);
+ const mx=Math.max(1,...rows.map(r=>Math.abs(r[1])));
+ document.getElementById(id).innerHTML=rows.map(([n,v,t])=>{const w=Math.abs(v)/mx*48,l=v<0?50-w:50;const col=t===1?css('--s2'):t===2?css('--ink'):css('--s1');
+  return`<div class="br"><span${t?' style="font-weight:700"':''}>${n}</span><span class="tr"><span class="z" style="left:50%"></span><i style="left:${l}%;width:${Math.max(w,.4)}%;background:${col}"></i></span><span class="n">${sg(v)}</span></div>`}).join('')}
+const redrawCF=()=>{d5();d6();bars('b1','lfpr');bars('b2','epop')};redrawCF();
+seg('pk',v=>{pkv=v;redrawCF()});
+// ---------- group table ----------
+const C=D.cells,S=D.s2301,TP=String(M0.table_peak),PV=String(M0.acs_prev),L5=M0.acs5_latest,P5=M0.acs5_prev;
+document.getElementById('tbp').textContent=TP+' peak';
+const st=(y,sx,ages)=>{let P=0,L=0,E=0;(sx==='all'?[0,1]:[+sx]).forEach(s=>ages.forEach(a=>{const c=C[y][s*8+a];P+=c[0];L+=c[1];E+=c[2]}));return{ur:100*(L-E)/L,lf:100*L/P,ep:100*E/P}};
+const sr=(k,r)=>{const v=S[k]&&S[k][r];return v?{ur:v[3],lf:v[1],ep:v[2],m:[v[6],v[4],v[5]]}:null};
+let tmv='chg',tbv='peak';
+function cell(v,key,m){if(v==null||isNaN(v))return'<td>—</td>';const flag=m!=null&&m>=M0.moe_flag?'<span class="flag">†</span>':'';
+ if(tmv==='lvl')return`<td>${v.toFixed(1)}${flag}</td>`;const good=key==='ur'?-v:v;const a=Math.min(1,Math.abs(v)/4)*.55;
+ const col=good>0?'31,138,59':'200,52,52';return`<td style="background:rgba(${col},${Math.abs(v)<.05?0:a})">${sg(v)}${flag}</td>`}
+const keys=['ur','lf','ep'],blank=[null,null,null];
+const cRow=(y0,f)=>{if(!C[y0]&&tmv==='chg')return blank;const a=f(String(LY)),b=tmv==='chg'?f(y0):null;return keys.map(k=>tmv==='lvl'?a[k]:a[k]-b[k])};
+const sRow=(k1,k0,r)=>{const a=sr(k1,r),b=sr(k0,r);if(!a||(!b&&tmv==='chg'))return blank;const m=a.m.map((x,i)=>tmv==='lvl'?x:Math.hypot(x,b.m[i]));return keys.map(k=>tmv==='lvl'?a[k]:a[k]-b[k]).concat([m])};
+const span5=y=>`${y-4}–${String(y).slice(2)}`;
+function tbl(){const fs=document.getElementById('fs').value,fa=document.getElementById('fa').value,y0=tbv==='peak'?TP:PV,anyF=fs!=='all'||fa!=='all';
+ const A=fa==='all'?[0,1,2,3,4,5,6,7]:AGEG[fa];
+ const r=(n,Lr,Rr)=>`<tr><td>${n}</td>${Lr.slice(0,3).map((v,i)=>cell(v,keys[i],Lr[3]&&Lr[3][i])).join('').replace('<td','<td class="blk"')}${Rr.slice(0,3).map((v,i)=>cell(v,keys[i],Rr[3]&&Rr[3][i])).join('').replace('<td','<td class="blk"')}</tr>`;
+ let h=`<thead><tr><th></th><th class="blk" colspan="3">Every dimension on its own</th><th class="blk" colspan="3">${anyF?'Subgroup: '+(fs==='all'?'':fs==='0'?'Men ':'Women ')+(fa==='all'?'':'ages '+fa):'Any subgroup'}</th></tr><tr><th></th>`+'<th class="blk">Unemp.</th><th>Particip.</th><th>Emp–pop</th>'.repeat(2)+'</tr></thead><tbody>';
+ h+='<tr class="sec"><td colspan="7">SEX (16+)</td></tr>';
+ [['Men','0'],['Women','1']].forEach(([n,s])=>{h+=r(n,cRow(y0,y=>st(y,s,[0,1,2,3,4,5,6,7])),fs!=='all'?blank:cRow(y0,y=>st(y,s,A)))});
+ h+='<tr class="sec"><td colspan="7">AGE</td></tr>';
+ Object.entries(AGEG).forEach(([n,a])=>{h+=r(n,cRow(y0,y=>st(y,'all',a)),fa!=='all'?blank:cRow(y0,y=>st(y,fs,a)))});
+ const b5=tbv==='peak'?+TP:P5;
+ h+=`<tr class="sec"><td colspan="7">RACE &amp; ETHNICITY (16+, ACS 5-year ${tmv==='lvl'?span5(L5):span5(L5)+' vs. '+span5(b5)+(L5-b5<5?' (windows overlap)':'')})</td></tr>`;
+ [['White, non-Hispanic','whitenh'],['Black','black'],['Asian','asian'],['Hispanic (any race)','hisp'],['Two or more races','two']].forEach(([n,k])=>{const Lr=sRow('acs5'+L5,'acs5'+b5,k);h+=r(n,Lr,anyF?blank:Lr)});
+ h+='<tr class="sec"><td colspan="7">EDUCATION (ages 25–64, ACS 1-year)</td></tr>';
+ [['Less than high school','lths'],['High school','hs'],['Some college','somecol'],["Bachelor's+",'ba']].forEach(([n,k])=>{const Lr=sRow('acs1'+LY,'acs1'+y0,k);h+=r(n,Lr,anyF?blank:Lr)});
+ h+=r('Total (16+)',cRow(y0,y=>st(y,'all',[0,1,2,3,4,5,6,7])),cRow(y0,y=>st(y,fs,A))).replace('<tr>','<tr class="tot">');
+ document.getElementById('gt').innerHTML=h+'</tbody>';
+ document.getElementById('thru').textContent=(tmv==='lvl'?'Levels, '+LY:'Change, '+y0+' → '+LY)+` · ACS ${LY} 1-year and ${span5(L5)} 5-year · `+(anyF?'Race and education rows go blank under a subgroup filter; those cross-cuts need PUMS.':'All filters on Overall, so the two blocks match.')}
+seg('tm',v=>{tmv=v;tbl()});seg('tb',v=>{tbv=v;tbl()});
+['fs','fa'].forEach(i=>document.getElementById(i).addEventListener('change',tbl));tbl();
+// ---------- swap table and sources ----------
+const SW=[['Monthly actual LFPR/EPOP','CPS, monthly, seasonally adjusted','ACS 1-year (annual) for the headline; LAUS labor force and employment ÷ ACS population 16+ for a monthly read','Monthly frequency; LAUS is model-based and its level differs from ACS'],
+['Age/sex-adjusted series','CPS microdata cells, chained monthly','ACS B23001, 16 sex × age cells, chained annually (midpoint shift-share)','The 2020 step spans two years'],
+['Aging-only counterfactual','Peaks 2000–01, 2007, 2019–20','First ACS year plus configured peaks within the ACS span (2006 onward)','The 2000–01 peak'],
+['Contribution lines','5-yr trailing avg, annualized','Cumulative chained contribution since the first year','Smoothing choices (too few points)'],
+['Race/ethnicity rows','CPS microdata','ACS 5-year S2301 (1-year suppressed for small groups)','Timeliness; overlapping windows'],
+['Education rows','CPS microdata, 25+','ACS 1-year S2301, 25–64','The 65+ by education; comparability'],
+['Arbitrary cross-cuts','IPUMS CPS microdata','Sex × age from B23001; anything else needs ACS PUMS on PUMAs approximating the MSA','Exact MSA boundary; easy assembly'],
+['Small-sample flag (†)','Cell sample counts','Published ACS margins of error','—']];
+document.getElementById('sw').innerHTML=SW.map(r=>'<tr>'+r.map(c=>`<td>${c}</td>`).join('')+'</tr>').join('');
+document.getElementById('src').textContent=`Sources: U.S. Census Bureau, American Community Survey 1-year tables B23001 and S2301 (${FY}–${LY}) and 5-year S2301; BLS Local Area Unemployment Statistics (through ${M0.laus_last}). Calculations follow the method notes on econvitals.org/labor/demographicdetail. Rates in the top charts use the civilian population 16+ (B23001); S2301 headline rates use the total population 16+ and can differ slightly.`;
+const all=()=>{['f1','f2','f3','f4','f5','f6'].forEach(i=>document.getElementById(i)._d());bars('b1','lfpr');bars('b2','epop')};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',all);new MutationObserver(all).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+}
+}
+</script></body></html>
